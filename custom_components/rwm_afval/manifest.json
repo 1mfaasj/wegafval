@@ -1,7 +1,9 @@
 {
   "domain": "rwm_afval",
   "name": "RWM Afvalkalender",
-  "codeowners": ["@1mfaasj"],
+  "codeowners": [
+    "@1mfaasj"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/1mfaasj/wegafval",
   "integration_type": "service",
