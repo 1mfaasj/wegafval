@@ -1,4 +1,4 @@
-"""RWM Afvalkalender: ophaaldagen rechtstreeks van rwm.nl."""
+"""Wegafval RWM kalender: ophaaldagen rechtstreeks van rwm.nl."""
 
 from __future__ import annotations
 

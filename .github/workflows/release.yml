@@ -15,7 +15,7 @@ jobs:
       - name: Controleer of tag en manifest-versie gelijk zijn
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          VERSIE=$(python3 -c "import json;print(json.load(open('custom_components/rwm_afval/manifest.json'))['version'])")
+          VERSIE=$(python3 -c "import json;print(json.load(open('custom_components/wegafval/manifest.json'))['version'])")
           if [ "$TAG" != "$VERSIE" ]; then
             echo "::error::Tag v$TAG komt niet overeen met manifest-versie $VERSIE"
             exit 1

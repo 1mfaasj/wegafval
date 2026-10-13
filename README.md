@@ -55,7 +55,7 @@ Selecteer als type:
 Integratie
 ```
 
-Installeer daarna **RWM Afvalkalender** en herstart Home Assistant.
+Installeer daarna **Wegafval RWM kalender** en herstart Home Assistant.
 
 Voeg de integratie vervolgens toe via:
 
@@ -63,7 +63,7 @@ Voeg de integratie vervolgens toe via:
 Instellingen
 → Apparaten en diensten
 → Integratie toevoegen
-→ RWM Afvalkalender
+→ Wegafval RWM kalender
 ```
 
 Vul je postcode en huisnummer in.
@@ -73,11 +73,11 @@ Vul je postcode en huisnummer in.
 De exacte entity-ID's kunnen per installatie verschillen.
 
 ```text
-sensor.rwm_afvalkalender_volgende_ophaling
-sensor.rwm_afvalkalender_ophaling_vandaag
-sensor.rwm_afvalkalender_ophaling_morgen
-sensor.rwm_afvalkalender_bronstatus
-calendar.rwm_afvalkalender
+sensor.wegafvalkalender_volgende_ophaling
+sensor.wegafvalkalender_ophaling_vandaag
+sensor.wegafvalkalender_ophaling_morgen
+sensor.wegafvalkalender_bronstatus
+calendar.wegafvalkalender
 ```
 
 Daarnaast worden per beschikbare afvalsoort een datumsensor en een sensor voor het aantal resterende dagen aangemaakt.
@@ -112,7 +112,7 @@ Bij problemen kun je via Home Assistant een diagnosebestand downloaden:
 ```text
 Instellingen
 → Apparaten en diensten
-→ RWM Afvalkalender
+→ Wegafval RWM kalender
 → Drie punten
 → Diagnostiek downloaden
 ```

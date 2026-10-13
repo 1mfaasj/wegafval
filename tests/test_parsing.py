@@ -10,7 +10,7 @@ import sys
 
 # parsing.py los laden (zonder de map op sys.path te zetten, anders botst
 # calendar.py van de integratie met de standaardmodule 'calendar')
-_PAD = Path(__file__).parent.parent / "custom_components" / "rwm_afval" / "parsing.py"
+_PAD = Path(__file__).parent.parent / "custom_components" / "wegafval" / "parsing.py"
 _spec = importlib.util.spec_from_file_location("rwm_parsing", _PAD)
 _mod = importlib.util.module_from_spec(_spec)
 sys.modules["rwm_parsing"] = _mod

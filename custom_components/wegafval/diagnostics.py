@@ -1,4 +1,4 @@
-"""Diagnostiek voor de RWM Afvalkalender-integratie."""
+"""Diagnostiek voor de Wegafval RWM kalender-integratie."""
 
 from __future__ import annotations
 

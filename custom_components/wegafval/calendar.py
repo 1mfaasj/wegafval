@@ -1,4 +1,4 @@
-"""Kalender-entiteit voor RWM Afvalkalender."""
+"""Kalender-entiteit voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ async def async_setup_entry(
 class RWMKalender(RWMEntity, CalendarEntity):
     """Alle ophaaldagen als hele-dag-afspraken."""
 
-    _attr_name = None  # gebruikt de apparaatnaam: calendar.rwm_afvalkalender
+    _attr_name = None  # gebruikt de apparaatnaam: calendar.wegafvalkalender
 
     def __init__(self, coordinator: RWMCoordinator) -> None:
         super().__init__(coordinator, "kalender")

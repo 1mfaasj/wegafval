@@ -1,4 +1,4 @@
-"""Basis-entiteit voor RWM Afvalkalender."""
+"""Basis-entiteit voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class RWMEntity(CoordinatorEntity[RWMCoordinator]):
         self._attr_unique_id = f"{bagid}_{sleutel}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, bagid)},
-            name="RWM Afvalkalender",
+            name="Wegafval RWM kalender",
             manufacturer="RWM afval & reiniging",
             model=entry.data.get(CONF_ADRES, entry.title),
             entry_type=DeviceEntryType.SERVICE,

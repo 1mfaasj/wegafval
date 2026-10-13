@@ -1,4 +1,4 @@
-"""Sensoren voor RWM Afvalkalender."""
+"""Sensoren voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 

@@ -1,11 +1,11 @@
-"""Constanten voor de RWM Afvalkalender integratie."""
+"""Constanten voor de Wegafval RWM kalender integratie."""
 
 from __future__ import annotations
 
 from datetime import timedelta
 from typing import Final
 
-DOMAIN: Final = "rwm_afval"
+DOMAIN: Final = "wegafval"
 
 BASE_URL: Final = "https://rwm.nl"
 USER_AGENT: Final = (

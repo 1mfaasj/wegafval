@@ -1,4 +1,4 @@
-"""Config flow voor RWM Afvalkalender."""
+"""Config flow voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 
