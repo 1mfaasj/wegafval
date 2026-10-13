@@ -32,7 +32,7 @@ async def async_setup_entry(
 class RWMRefreshButton(RWMEntity, ButtonEntity):
     """Vernieuw de RWM-afvalgegevens handmatig."""
 
-    _attr_name = "Nu bijwerken"
+    _attr_translation_key = "nu_bijwerken"
     _attr_icon = "mdi:refresh"
 
     def __init__(
@@ -48,15 +48,15 @@ class RWMRefreshButton(RWMEntity, ButtonEntity):
     def available(self) -> bool:
         """Geef aan of handmatig vernieuwen is toegestaan."""
 
+        if not super().available:
+            return False
+
         data = self.coordinator.data
 
         if data is None:
             return True
 
-        elapsed = (
-            dt_util.utcnow()
-            - data.laatste_poging
-        )
+        elapsed = dt_util.utcnow() - data.laatste_poging
 
         return elapsed >= MANUAL_REFRESH_INTERVAL
 
