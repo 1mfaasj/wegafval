@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Address",
+        "description": "Enter the address for which you want the RWM waste calendar.",
+        "data": {
+          "postcode": "Postcode",
+          "huisnummer": "House number",
+          "toevoeging": "Suffix (optional)"
+        }
+      },
+      "select_address": {
+        "title": "Choose your address",
+        "description": "Multiple addresses were found.",
+        "data": {
+          "bagid": "Address"
+        }
+      },
+      "papier": {
+        "title": "Waste paper",
+        "description": "Living in Echt-Susteren? Paper is collected per village there and is not part of the RWM calendar. Pick your village and the integration calculates the dates. Living elsewhere? Choose 'Geen'.",
+        "data": {
+          "papier_kern": "Village"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to rwm.nl.",
+      "address_not_found": "This address was not found at RWM.",
+      "invalid_postcode": "Invalid postcode (use e.g. 1234AB)."
+    },
+    "abort": {
+      "already_configured": "This address is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Waste paper",
+        "description": "Living in Echt-Susteren? Paper is collected per village there and is not part of the RWM calendar. Pick your village and the integration calculates the dates. Living elsewhere? Choose 'Geen'.",
+        "data": {
+          "papier_kern": "Village"
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Cannot connect to rwm.nl."
+    }
+  }
+}

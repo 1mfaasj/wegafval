@@ -1,0 +1,12 @@
+{
+  "domain": "rwm_afval",
+  "name": "RWM Afvalkalender",
+  "codeowners": ["@1mfaasj"],
+  "config_flow": true,
+  "documentation": "https://github.com/1mfaasj/wegafval",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/1mfaasj/wegafval/issues",
+  "requirements": [],
+  "version": "1.2.1"
+}

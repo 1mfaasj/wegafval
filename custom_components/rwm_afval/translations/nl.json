@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Adres",
+        "description": "Vul het adres in waarvoor je de afvalkalender van RWM wilt zien.",
+        "data": {
+          "postcode": "Postcode",
+          "huisnummer": "Huisnummer",
+          "toevoeging": "Toevoeging (optioneel)"
+        }
+      },
+      "select_address": {
+        "title": "Kies je adres",
+        "description": "Er zijn meerdere adressen gevonden.",
+        "data": {
+          "bagid": "Adres"
+        }
+      },
+      "papier": {
+        "title": "Oud papier",
+        "description": "Woon je in Echt-Susteren? Oud papier wordt daar per kern opgehaald en zit niet in de RWM-kalender. Kies je kern, dan berekent de integratie de datums. Woon je ergens anders, kies dan 'Geen'.",
+        "data": {
+          "papier_kern": "Kern"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan geen verbinding maken met rwm.nl.",
+      "address_not_found": "Dit adres is niet gevonden bij RWM.",
+      "invalid_postcode": "Ongeldige postcode (gebruik bijvoorbeeld 1234AB)."
+    },
+    "abort": {
+      "already_configured": "Dit adres is al toegevoegd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Oud papier",
+        "description": "Woon je in Echt-Susteren? Oud papier wordt daar per kern opgehaald en zit niet in de RWM-kalender. Kies je kern, dan berekent de integratie de datums. Woon je ergens anders, kies dan 'Geen'.",
+        "data": {
+          "papier_kern": "Kern"
+        }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Kan geen verbinding maken met rwm.nl."
+    }
+  }
+}
