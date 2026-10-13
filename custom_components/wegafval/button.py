@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,6 +13,8 @@ from homeassistant.util import dt as dt_util
 from .const import MANUAL_REFRESH_INTERVAL
 from .coordinator import RWMCoordinator
 from .entity import RWMEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -39,28 +43,37 @@ class RWMRefreshButton(RWMEntity, ButtonEntity):
         self,
         coordinator: RWMCoordinator,
     ) -> None:
+        """Initialiseer de vernieuwknop."""
+
         super().__init__(
             coordinator,
             "nu_bijwerken",
         )
 
-    @property
-    def available(self) -> bool:
-        """Geef aan of handmatig vernieuwen is toegestaan."""
-
-        if not super().available:
-            return False
+    async def async_press(self) -> None:
+        """Start een handmatige update."""
 
         data = self.coordinator.data
 
-        if data is None:
-            return True
+        if data is not None:
+            elapsed = dt_util.utcnow() - data.laatste_poging
 
-        elapsed = dt_util.utcnow() - data.laatste_poging
+            if elapsed < MANUAL_REFRESH_INTERVAL:
+                remaining = MANUAL_REFRESH_INTERVAL - elapsed
 
-        return elapsed >= MANUAL_REFRESH_INTERVAL
+                _LOGGER.info(
+                    "Handmatig bijwerken overgeslagen; "
+                    "probeer het over ongeveer %s seconden opnieuw",
+                    max(
+                        1,
+                        round(remaining.total_seconds()),
+                    ),
+                )
 
-    async def async_press(self) -> None:
-        """Start een handmatige update."""
+                return
+
+        _LOGGER.info(
+            "Handmatige update van de RWM-afvalkalender gestart"
+        )
 
         await self.coordinator.async_request_refresh()
