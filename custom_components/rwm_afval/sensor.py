@@ -99,7 +99,7 @@ class RWMStroomSensor(RWMEntity, SensorEntity):
         )
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any\]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Geef aanvullende informatie over deze afvalstroom."""
 
         today = _vandaag()
@@ -169,7 +169,7 @@ class RWMDagenSensor(RWMEntity, SensorEntity):
         return (next_pickup - today).days
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any\]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Geef de bijbehorende ophaaldatum."""
 
         next_pickup = self.coordinator.data.volgende(
@@ -204,7 +204,7 @@ class RWMVolgendeSensor(RWMEntity, SensorEntity):
 
     def _volgende(
         self,
-    ) -> tuple[date | None, list[str]\]:
+    ) -> tuple[date | None, list[str]]:
         """Bepaal de eerstvolgende datum en afvalstromen."""
 
         today = _vandaag()
@@ -246,7 +246,7 @@ class RWMVolgendeSensor(RWMEntity, SensorEntity):
         return value or None
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any\]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Geef datum en dagen tot de eerstvolgende ophaling."""
 
         pickup_date, stream_ids = self._volgende()
@@ -290,7 +290,7 @@ class RWMDagSensor(RWMEntity, SensorEntity):
         self._offset = offset
         self._attr_name = naam
 
-    def _titels(self) -> list[str\]:
+    def _titels(self) -> list[str]:
         """Geef de afvalstromen op de gekozen dag."""
 
         pickup_date = _vandaag() + timedelta(
@@ -311,7 +311,7 @@ class RWMDagSensor(RWMEntity, SensorEntity):
         return ", ".join(self._titels()) or "Geen"
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any\]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Geef alle afvalstromen als lijst."""
 
         return {
@@ -359,7 +359,7 @@ class RWMBronStatusSensor(RWMEntity, SensorEntity):
         return "mdi:database-question"
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any\]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Geef diagnostische informatie over de gegevensbron."""
 
         data = self.coordinator.data
