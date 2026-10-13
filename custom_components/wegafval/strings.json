@@ -47,5 +47,16 @@
     "abort": {
       "cannot_connect": "Cannot connect to rwm.nl."
     }
+  },
+  "button": {
+    "nu_bijwerken": {
+      "name": "Nu bijwerken"
+    }
+  },
+  "issues": {
+    "papierkern_verdwenen": {
+      "title": "De ingestelde papierkern bestaat niet meer",
+      "description": "Het oud-papierschema voor `{kern}` is niet meer beschikbaar bij RWM. Open de integratie **Wegafval RWM kalender**, kies **Configureren** en selecteer opnieuw de juiste kern."
+    }
   }
 }

@@ -47,5 +47,16 @@
     "abort": {
       "cannot_connect": "Cannot connect to rwm.nl."
     }
+  },
+  "button": {
+    "nu_bijwerken": {
+      "name": "Update now"
+    }
+  },
+  "issues": {
+    "papierkern_verdwenen": {
+      "title": "The configured paper collection area no longer exists",
+      "description": "The paper collection schedule for `{kern}` is no longer available from RWM. Open **Wegafval RWM kalender**, select **Configure**, and select the correct area."
+    }
   }
 }

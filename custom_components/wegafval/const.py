@@ -1,4 +1,4 @@
-"""Constanten voor de Wegafval RWM kalender integratie."""
+"""Constanten voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ from typing import Final
 DOMAIN: Final = "wegafval"
 
 BASE_URL: Final = "https://rwm.nl"
+
 USER_AGENT: Final = (
-    "HomeAssistant-RWM-Afvalkalender (+https://www.home-assistant.io)"
+    "HomeAssistant-Wegafval "
+    "(https://github.com/1mfaasj/wegafval)"
 )
 
 CONF_POSTCODE: Final = "postcode"
@@ -18,17 +20,20 @@ CONF_TOEVOEGING: Final = "toevoeging"
 CONF_BAGID: Final = "bagid"
 CONF_ADRES: Final = "adres"
 CONF_PAPIER_KERN: Final = "papier_kern"
+
 GEEN_PAPIER: Final = "geen"
 
-# Interne sleutel voor het berekende oud-papierschema (Echt-Susteren)
 PAPIER_STREAM_ID: Final = "papier"
 
-# Twee keer per dag verversen: genoeg voor wijzigingen, zonder RWM te belasten
 UPDATE_INTERVAL: Final = timedelta(hours=12)
 
-STORAGE_VERSION: Final = 1
+CACHE_WARNING_AGE: Final = timedelta(hours=72)
+CACHE_MAXIMUM_AGE: Final = timedelta(days=14)
 
-# RWM-icoonnaam -> Material Design Icon
+MANUAL_REFRESH_INTERVAL: Final = timedelta(minutes=5)
+
+STORAGE_VERSION: Final = 2
+
 ICONS: Final[dict[str, str]] = {
     "mini-container": "mdi:trash-can",
     "gft": "mdi:leaf",
@@ -41,4 +46,5 @@ ICONS: Final[dict[str, str]] = {
     "elektronisch-apparaat": "mdi:television",
     "kca-algemeen": "mdi:flask",
 }
+
 DEFAULT_ICON: Final = "mdi:delete-empty"

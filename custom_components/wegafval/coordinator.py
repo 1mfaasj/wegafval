@@ -1,7 +1,8 @@
-"""Data-coordinator: haalt RWM-data op en bewaart een lokale cache."""
+"""Data-coordinator voor Wegafval RWM kalender."""
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 import logging
@@ -9,6 +10,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import (
@@ -19,6 +21,8 @@ from homeassistant.util import dt as dt_util
 
 from .api import RWMClient, RWMError
 from .const import (
+    CACHE_MAXIMUM_AGE,
+    CACHE_WARNING_AGE,
     CONF_BAGID,
     CONF_PAPIER_KERN,
     DOMAIN,
@@ -39,13 +43,12 @@ STATUS_ACTUEEL = "actueel"
 STATUS_CACHE = "cache"
 STATUS_VEROUDERD = "verouderd"
 
-CACHE_WARNING_AGE = timedelta(hours=72)
 MAX_FUTURE_DAYS = 550
 
 
 @dataclass
 class RWMData:
-    """Ophaaldata en bronstatus per afvalstroom."""
+    """Ophaaldata en bronstatus."""
 
     streams: dict[str, dict[str, Any]]
     pickups: dict[str, list[date]]
@@ -86,7 +89,7 @@ class RWMData:
         self,
         sid: str,
     ) -> str:
-        """Geef de titel van een afvalstroom."""
+        """Geef de zichtbare titel van een afvalstroom."""
 
         return self.streams.get(
             sid,
@@ -103,16 +106,18 @@ class RWMData:
         now = dt_util.utcnow()
 
         try:
-            return max(
-                now - self.bijgewerkt,
-                timedelta(0),
-            )
+            age = now - self.bijgewerkt
         except TypeError:
             return timedelta(0)
 
+        return max(
+            age,
+            timedelta(0),
+        )
+
     @property
     def cache_leeftijd_uren(self) -> float:
-        """Geef de cacheleeftijd afgerond in uren."""
+        """Geef de cacheleeftijd in uren."""
 
         return round(
             self.cache_leeftijd.total_seconds() / 3600,
@@ -121,16 +126,22 @@ class RWMData:
 
     @property
     def is_verouderd(self) -> bool:
-        """Controleer of de laatst bekende gegevens te oud zijn."""
+        """Geef aan of de cache ouder is dan 72 uur."""
 
         return self.cache_leeftijd > CACHE_WARNING_AGE
+
+    @property
+    def is_onbruikbaar_verouderd(self) -> bool:
+        """Geef aan of de cache ouder is dan veertien dagen."""
+
+        return self.cache_leeftijd > CACHE_MAXIMUM_AGE
 
     def met_fout(
         self,
         error: Exception,
         attempt_time: datetime,
     ) -> RWMData:
-        """Maak een kopie met bijgewerkte fout- en cachestatus."""
+        """Maak een kopie met bijgewerkte foutstatus."""
 
         status = (
             STATUS_VEROUDERD
@@ -146,7 +157,7 @@ class RWMData:
         )
 
     def als_dict(self) -> dict[str, Any]:
-        """Maak de gegevens geschikt voor Home Assistant-opslag."""
+        """Maak de gegevens geschikt voor lokale opslag."""
 
         return {
             "streams": self.streams,
@@ -178,13 +189,19 @@ class RWMData:
         raw_updated = raw.get("bijgewerkt")
 
         if not isinstance(raw_streams, dict):
-            raise ValueError("Cache bevat geen geldige afvalstromen")
+            raise ValueError(
+                "Cache bevat geen geldige afvalstromen"
+            )
 
         if not isinstance(raw_pickups, dict):
-            raise ValueError("Cache bevat geen geldige ophaaldata")
+            raise ValueError(
+                "Cache bevat geen geldige ophaaldata"
+            )
 
         if not isinstance(raw_updated, str):
-            raise ValueError("Cache bevat geen geldige updatedatum")
+            raise ValueError(
+                "Cache bevat geen geldige updatedatum"
+            )
 
         streams: dict[str, dict[str, Any]] = {}
 
@@ -194,11 +211,16 @@ class RWMData:
 
             title = stream.get("title")
 
-            if not isinstance(title, str) or not title.strip():
+            if not isinstance(title, str):
+                continue
+
+            title = title.strip()
+
+            if not title:
                 continue
 
             streams[str(sid)] = {
-                "title": title.strip(),
+                "title": title,
                 "icon": stream.get("icon"),
             }
 
@@ -225,21 +247,32 @@ class RWMData:
                 pickups[str(sid)] = sorted(parsed_dates)
 
         if not streams:
-            raise ValueError("Cache bevat geen afvalstromen")
+            raise ValueError(
+                "Cache bevat geen afvalstromen"
+            )
 
         if not pickups:
-            raise ValueError("Cache bevat geen ophaaldata")
+            raise ValueError(
+                "Cache bevat geen ophaaldata"
+            )
 
-        updated = datetime.fromisoformat(raw_updated)
+        updated = datetime.fromisoformat(
+            raw_updated
+        )
 
         raw_attempt = raw.get("laatste_poging")
+
         if isinstance(raw_attempt, str):
             try:
-                last_attempt = datetime.fromisoformat(raw_attempt)
+                last_attempt = datetime.fromisoformat(
+                    raw_attempt
+                )
             except ValueError:
                 last_attempt = updated
         else:
             last_attempt = updated
+
+        last_error = raw.get("laatste_fout")
 
         return cls(
             streams=streams,
@@ -253,15 +286,15 @@ class RWMData:
                 )
             ),
             laatste_fout=(
-                str(raw["laatste_fout"])
-                if raw.get("laatste_fout")
+                str(last_error)
+                if last_error
                 else None
             ),
         )
 
 
 class RWMCoordinator(DataUpdateCoordinator[RWMData]):
-    """Haal de kalender op en val bij fouten terug op geldige cache."""
+    """Haal RWM-data op en gebruik geldige cache bij storingen."""
 
     config_entry: ConfigEntry
 
@@ -288,12 +321,25 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
             f"{DOMAIN}.{entry.entry_id}",
         )
 
+        self._update_lock = asyncio.Lock()
+        self._was_unavailable = False
+        self._reload_scheduled = False
+
+    @property
+    def paper_issue_id(self) -> str:
+        """Geef het unieke ID van de papierkernmelding."""
+
+        return (
+            f"papierkern_verdwenen_"
+            f"{self.config_entry.entry_id}"
+        )
+
     @staticmethod
     def _validate_data(
         data: RWMData,
         today: date,
     ) -> None:
-        """Controleer of een nieuwe dataset logisch en bruikbaar is."""
+        """Controleer of nieuwe gegevens bruikbaar zijn."""
 
         if not data.streams:
             raise RWMError(
@@ -324,14 +370,14 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
 
             if pickup_dates != sorted(set(pickup_dates)):
                 raise RWMError(
-                    f"Afvalstroom {sid} bevat ongesorteerde "
-                    "of dubbele datums"
+                    f"Afvalstroom {sid} bevat dubbele "
+                    "of ongesorteerde datums"
                 )
 
             for pickup_date in pickup_dates:
                 if pickup_date > future_limit:
                     raise RWMError(
-                        f"RWM gaf een onwaarschijnlijke datum terug: "
+                        "RWM gaf een onwaarschijnlijke datum terug: "
                         f"{pickup_date.isoformat()}"
                     )
 
@@ -348,7 +394,7 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
         new_data: RWMData,
         today: date,
     ) -> None:
-        """Detecteer extreme afwijkingen ten opzichte van bestaande data."""
+        """Detecteer extreme afwijkingen van eerdere gegevens."""
 
         if self.data is None:
             return
@@ -369,12 +415,83 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
 
         if (
             len(old_future_dates) >= 6
-            and len(new_future_dates) == 0
+            and not new_future_dates
         ):
             raise RWMError(
-                "Nieuwe RWM-data bevat plotseling geen toekomstige "
-                "ophaaldatums"
+                "Nieuwe RWM-data bevat plotseling geen "
+                "toekomstige ophaaldatums"
             )
+
+    def _handle_paper_schema(
+        self,
+        selected_area: str,
+        streams_from_api: dict[str, dict[str, Any]],
+        pickups: dict[str, set[date]],
+        streams: dict[str, dict[str, Any]],
+        today: date,
+    ) -> None:
+        """Voeg het berekende papierschema toe."""
+
+        if (
+            not selected_area
+            or selected_area == GEEN_PAPIER
+        ):
+            ir.async_delete_issue(
+                self.hass,
+                DOMAIN,
+                self.paper_issue_id,
+            )
+            return
+
+        paper_schema = kernen_uit_stromen(
+            streams_from_api
+        ).get(
+            selected_area
+        )
+
+        if paper_schema is None:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self.paper_issue_id,
+                is_fixable=False,
+                is_persistent=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="papierkern_verdwenen",
+                translation_placeholders={
+                    "kern": selected_area,
+                },
+            )
+
+            _LOGGER.warning(
+                "Oud-papierschema voor '%s' is niet meer "
+                "gevonden bij RWM; kies de kern opnieuw via "
+                "Configureren",
+                selected_area,
+            )
+            return
+
+        ir.async_delete_issue(
+            self.hass,
+            DOMAIN,
+            self.paper_issue_id,
+        )
+
+        pickups[PAPIER_STREAM_ID] = set(
+            paper_schema.datums(
+                today.year,
+                today.year,
+            )
+            + paper_schema.datums(
+                today.year + 1,
+                today.year,
+            )
+        )
+
+        streams[PAPIER_STREAM_ID] = {
+            "title": "Oud papier",
+            "icon": "papieren-doos",
+        }
 
     async def _haal_op(self) -> RWMData:
         """Haal en valideer actuele gegevens bij RWM."""
@@ -448,8 +565,8 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
 
         if calendar_items_found == 0:
             _LOGGER.warning(
-                "RWM gaf geen kalenderregels terug; "
-                "alleen eerstvolgende datums zijn beschikbaar"
+                "RWM gaf geen kalenderregels terug; alleen "
+                "eerstvolgende datums zijn beschikbaar"
             )
 
         streams = {
@@ -476,39 +593,13 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
             GEEN_PAPIER,
         )
 
-        if (
-            selected_area
-            and selected_area != GEEN_PAPIER
-        ):
-            paper_schema = kernen_uit_stromen(
-                streams_from_api
-            ).get(
-                selected_area
-            )
-
-            if paper_schema is None:
-                _LOGGER.warning(
-                    "Oud-papierschema voor '%s' is niet meer "
-                    "gevonden bij RWM; kies de kern opnieuw via "
-                    "Configureren",
-                    selected_area,
-                )
-            else:
-                pickups[PAPIER_STREAM_ID] = set(
-                    paper_schema.datums(
-                        today.year,
-                        today.year,
-                    )
-                    + paper_schema.datums(
-                        today.year + 1,
-                        today.year,
-                    )
-                )
-
-                streams[PAPIER_STREAM_ID] = {
-                    "title": "Oud papier",
-                    "icon": "papieren-doos",
-                }
+        self._handle_paper_schema(
+            selected_area,
+            streams_from_api,
+            pickups,
+            streams,
+            today,
+        )
 
         data = RWMData(
             streams=streams,
@@ -557,69 +648,143 @@ class RWMCoordinator(DataUpdateCoordinator[RWMData]):
             ValueError,
         ) as cache_error:
             _LOGGER.error(
-                "Opgeslagen RWM-cache is ongeldig: %s",
+                "Opgeslagen Wegafval-cache is ongeldig: %s",
                 cache_error,
             )
             return None
 
-        return cached_data.met_fout(
+        cached_data = cached_data.met_fout(
             error,
             attempt_time,
         )
 
+        if cached_data.is_onbruikbaar_verouderd:
+            _LOGGER.error(
+                "Opgeslagen Wegafval-data is ouder dan "
+                "veertien dagen en wordt niet meer gebruikt"
+            )
+            return None
+
+        return cached_data
+
+    def _schedule_reload_if_streams_changed(
+        self,
+        previous_stream_ids: set[str],
+        current_stream_ids: set[str],
+    ) -> None:
+        """Herlaad de integratie wanneer afvalstromen wijzigen."""
+
+        if not previous_stream_ids:
+            return
+
+        if previous_stream_ids == current_stream_ids:
+            return
+
+        if self._reload_scheduled:
+            return
+
+        added = sorted(
+            current_stream_ids - previous_stream_ids
+        )
+
+        removed = sorted(
+            previous_stream_ids - current_stream_ids
+        )
+
+        _LOGGER.warning(
+            "De beschikbare RWM-afvalstromen zijn gewijzigd. "
+            "Toegevoegd: %s. Verwijderd: %s. "
+            "De integratie wordt opnieuw geladen.",
+            added or "geen",
+            removed or "geen",
+        )
+
+        self._reload_scheduled = True
+
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(
+                self.config_entry.entry_id
+            )
+        )
+
     async def _async_update_data(self) -> RWMData:
-        """Werk de gegevens bij of gebruik de laatste geldige data."""
+        """Werk gegevens bij of gebruik geldige opgeslagen data."""
 
-        attempt_time = dt_util.utcnow()
+        async with self._update_lock:
+            attempt_time = dt_util.utcnow()
 
-        try:
-            data = await self._haal_op()
+            previous_stream_ids = (
+                set(self.data.streams)
+                if self.data is not None
+                else set()
+            )
 
-        except RWMError as error:
-            if self.data is not None:
-                cached_data = self.data.met_fout(
+            try:
+                data = await self._haal_op()
+
+            except RWMError as error:
+                if not self._was_unavailable:
+                    _LOGGER.warning(
+                        "RWM is niet bereikbaar (%s); de laatst "
+                        "bekende geldige gegevens worden gebruikt",
+                        error,
+                    )
+
+                self._was_unavailable = True
+
+                if self.data is not None:
+                    cached_data = self.data.met_fout(
+                        error,
+                        attempt_time,
+                    )
+
+                    if cached_data.is_onbruikbaar_verouderd:
+                        raise UpdateFailed(
+                            "RWM is niet bereikbaar en de laatst "
+                            "bekende gegevens zijn ouder dan "
+                            "veertien dagen"
+                        ) from error
+
+                    return cached_data
+
+                cached_data = await self._load_cache(
                     error,
                     attempt_time,
                 )
 
-                _LOGGER.warning(
-                    "RWM-update mislukt (%s); data van %s "
-                    "blijft actief",
-                    error,
-                    cached_data.bijgewerkt.isoformat(),
+                if cached_data is not None:
+                    return cached_data
+
+                raise UpdateFailed(
+                    "RWM-update mislukt en er is geen geldige "
+                    f"cache beschikbaar: {error}"
+                ) from error
+
+            if self._was_unavailable:
+                _LOGGER.info(
+                    "RWM is weer bereikbaar; actuele "
+                    "afvalgegevens zijn geladen"
                 )
 
-                return cached_data
+            self._was_unavailable = False
 
-            cached_data = await self._load_cache(
-                error,
-                attempt_time,
+            current_stream_ids = set(
+                data.streams
             )
 
-            if cached_data is not None:
-                _LOGGER.warning(
-                    "RWM-update mislukt (%s); opgeslagen data "
-                    "van %s wordt gebruikt",
-                    error,
-                    cached_data.bijgewerkt.isoformat(),
+            self._schedule_reload_if_streams_changed(
+                previous_stream_ids,
+                current_stream_ids,
+            )
+
+            try:
+                await self._store.async_save(
+                    data.als_dict()
+                )
+            except Exception:
+                _LOGGER.exception(
+                    "Actuele RWM-data is opgehaald, maar kon "
+                    "niet lokaal worden opgeslagen"
                 )
 
-                return cached_data
-
-            raise UpdateFailed(
-                f"RWM-update mislukt en er is geen geldige cache: "
-                f"{error}"
-            ) from error
-
-        try:
-            await self._store.async_save(
-                data.als_dict()
-            )
-        except Exception as error:
-            _LOGGER.error(
-                "Actuele RWM-data is opgehaald, maar kon niet "
-                "worden opgeslagen: %s",
-                error,
-            )
-
-        return data
+            return data
