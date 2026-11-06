@@ -72,8 +72,6 @@ class RWMRefreshButton(RWMEntity, ButtonEntity):
 
                 return
 
-        _LOGGER.info(
-            "Handmatige update van de RWM-afvalkalender gestart"
-        )
+        _LOGGER.info("Handmatige update van de RWM-afvalkalender gestart")
 
         await self.coordinator.async_request_refresh()

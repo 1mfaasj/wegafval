@@ -23,6 +23,15 @@
         "data": {
           "papier_kern": "Kern"
         }
+      },
+      "reconfigure": {
+        "title": "Adres wijzigen",
+        "description": "Vul het nieuwe adres in. Entiteiten, namen en automations blijven behouden; de opgeslagen gegevens van het oude adres worden verwijderd.",
+        "data": {
+          "postcode": "Postcode",
+          "huisnummer": "Huisnummer",
+          "toevoeging": "Toevoeging (optioneel)"
+        }
       }
     },
     "error": {
@@ -31,7 +40,8 @@
       "invalid_postcode": "Ongeldige postcode (gebruik bijvoorbeeld 1234AB)."
     },
     "abort": {
-      "already_configured": "Dit adres is al toegevoegd."
+      "already_configured": "Dit adres is al toegevoegd.",
+      "reconfigure_successful": "Het adres is gewijzigd."
     }
   },
   "options": {
@@ -55,9 +65,36 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "afval_buiten_zetten": {
+        "name": "Afval buiten zetten"
+      }
+    },
     "button": {
       "nu_bijwerken": {
         "name": "Nu bijwerken"
+      }
+    },
+    "sensor": {
+      "volgende_ophaling": {
+        "name": "Volgende ophaling"
+      },
+      "ophaling_vandaag": {
+        "name": "Ophaling vandaag"
+      },
+      "ophaling_morgen": {
+        "name": "Ophaling morgen"
+      },
+      "dagen_tot_ophaling": {
+        "name": "{afvalsoort} dagen tot ophaling"
+      },
+      "bronstatus": {
+        "name": "Bronstatus",
+        "state": {
+          "actueel": "Actueel",
+          "cache": "Cache",
+          "verouderd": "Verouderd"
+        }
       }
     }
   }

@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, STORAGE_VERSION
@@ -13,6 +14,7 @@ from .coordinator import RWMCoordinator
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
+    Platform.BINARY_SENSOR,
     Platform.CALENDAR,
     Platform.BUTTON,
 ]
@@ -41,10 +43,16 @@ async def async_setup_entry(
     )
 
     entry.async_on_unload(
-        entry.add_update_listener(
-            _opties_gewijzigd
+        async_track_time_change(
+            hass,
+            coordinator.async_middernacht,
+            hour=0,
+            minute=0,
+            second=5,
         )
     )
+
+    entry.async_on_unload(entry.add_update_listener(_opties_gewijzigd))
 
     return True
 
@@ -55,9 +63,7 @@ async def _opties_gewijzigd(
 ) -> None:
     """Herlaad de integratie na gewijzigde opties."""
 
-    await hass.config_entries.async_reload(
-        entry.entry_id
-    )
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(

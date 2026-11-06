@@ -21,6 +21,7 @@ De integratie maakt onder andere entiteiten aan voor:
 - Het aantal dagen tot de volgende ophaling
 - Ophaling vandaag
 - Ophaling morgen
+- Afval buiten zetten (aan als er morgen iets wordt opgehaald)
 - De eerstvolgende ophaling
 - Alle ophalingen in een Home Assistant-kalender
 - De status van de RWM-gegevensbron
@@ -37,7 +38,7 @@ De bronstatus kan één van deze waarden hebben:
 - `cache`: recente opgeslagen gegevens worden gebruikt
 - `verouderd`: de opgeslagen gegevens zijn ouder dan 72 uur
 
-Nieuwe gegevens worden gecontroleerd voordat de bestaande gegevens worden vervangen. Lege, ongeldige of onwaarschijnlijke responses worden geweigerd.
+Nieuwe gegevens worden gecontroleerd voordat de bestaande gegevens worden vervangen. Lege, ongeldige of onwaarschijnlijke responses worden geweigerd, bijvoorbeeld wanneer er ineens minder dan de helft van de toekomstige ophaaldatums over is. Blijft dat langer dan 72 uur zo, dan wordt de nieuwe data toch overgenomen.
 
 Tijdelijke verbindingsproblemen, rate limits en serverfouten worden automatisch opnieuw geprobeerd.
 
@@ -73,14 +74,42 @@ Vul je postcode en huisnummer in.
 De exacte entity-ID's kunnen per installatie verschillen.
 
 ```text
-sensor.wegafvalkalender_volgende_ophaling
-sensor.wegafvalkalender_ophaling_vandaag
-sensor.wegafvalkalender_ophaling_morgen
-sensor.wegafvalkalender_bronstatus
-calendar.wegafvalkalender
+sensor.wegafval_rwm_kalender_volgende_ophaling
+sensor.wegafval_rwm_kalender_ophaling_vandaag
+sensor.wegafval_rwm_kalender_ophaling_morgen
+sensor.wegafval_rwm_kalender_bronstatus
+binary_sensor.wegafval_rwm_kalender_afval_buiten_zetten
+calendar.wegafval_rwm_kalender
 ```
 
 Daarnaast worden per beschikbare afvalsoort een datumsensor en een sensor voor het aantal resterende dagen aangemaakt.
+
+Afvalsoorten die tijdelijk geen ophaaldatum hebben (bijvoorbeeld kerstbomen buiten januari) blijven bestaan; hun sensor heeft dan geen waarde.
+
+## Voorbeeld: melding de avond van tevoren
+
+```yaml
+automation:
+  - alias: "Afval buiten zetten"
+    triggers:
+      - trigger: time
+        at: "19:00:00"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.wegafval_rwm_kalender_afval_buiten_zetten
+        state: "on"
+    actions:
+      - action: notify.notify
+        data:
+          title: "Afval buiten zetten"
+          message: >
+            Morgen wordt opgehaald:
+            {{ state_attr('binary_sensor.wegafval_rwm_kalender_afval_buiten_zetten', 'soorten') | join(', ') }}
+```
+
+## Adres wijzigen
+
+Na een verhuizing kun je het adres aanpassen via de drie puntjes bij de integratie → **Opnieuw configureren**. Entiteiten, namen en automations blijven behouden; de opgeslagen gegevens van het oude adres worden verwijderd.
 
 ## Bronstatus
 
@@ -117,7 +146,7 @@ Instellingen
 → Diagnostiek downloaden
 ```
 
-Adresgegevens, postcode, huisnummer en BAG-ID worden daarbij afgeschermd.
+Adresgegevens (ook de titel van de integratie), postcode, huisnummer en BAG-ID worden daarbij afgeschermd. De gekozen oud-papierkern blijft zichtbaar, omdat die nodig is om problemen met het papierschema te onderzoeken.
 
 Controleer een diagnosebestand altijd voordat je het openbaar deelt.
 

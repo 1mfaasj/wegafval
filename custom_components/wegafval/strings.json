@@ -23,6 +23,15 @@
         "data": {
           "papier_kern": "Village"
         }
+      },
+      "reconfigure": {
+        "title": "Change address",
+        "description": "Enter the new address. Entities, names and automations are kept; the stored data for the old address is removed.",
+        "data": {
+          "postcode": "Postcode",
+          "huisnummer": "House number",
+          "toevoeging": "Suffix (optional)"
+        }
       }
     },
     "error": {
@@ -31,7 +40,8 @@
       "invalid_postcode": "Invalid postcode (use e.g. 1234AB)."
     },
     "abort": {
-      "already_configured": "This address is already configured."
+      "already_configured": "This address is already configured.",
+      "reconfigure_successful": "The address has been changed."
     }
   },
   "options": {
@@ -50,14 +60,41 @@
   },
   "issues": {
     "papierkern_verdwenen": {
-      "title": "De ingestelde papierkern bestaat niet meer",
-      "description": "Het oud-papierschema voor `{kern}` is niet meer beschikbaar bij RWM. Open de integratie **Wegafval RWM kalender**, kies **Configureren** en selecteer opnieuw de juiste kern."
+      "title": "The configured paper collection area no longer exists",
+      "description": "The paper collection schedule for `{kern}` is no longer available from RWM. Open **Wegafval RWM kalender**, select **Configure**, and select the correct area."
     }
   },
   "entity": {
+    "binary_sensor": {
+      "afval_buiten_zetten": {
+        "name": "Put out waste"
+      }
+    },
     "button": {
       "nu_bijwerken": {
-        "name": "Nu bijwerken"
+        "name": "Update now"
+      }
+    },
+    "sensor": {
+      "volgende_ophaling": {
+        "name": "Next collection"
+      },
+      "ophaling_vandaag": {
+        "name": "Collection today"
+      },
+      "ophaling_morgen": {
+        "name": "Collection tomorrow"
+      },
+      "dagen_tot_ophaling": {
+        "name": "{afvalsoort} days until collection"
+      },
+      "bronstatus": {
+        "name": "Source status",
+        "state": {
+          "actueel": "Up to date",
+          "cache": "Cached",
+          "verouderd": "Outdated"
+        }
       }
     }
   }

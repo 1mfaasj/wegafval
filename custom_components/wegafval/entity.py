@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
-from homeassistant.core import callback
 from homeassistant.helpers.device_registry import (
     DeviceEntryType,
     DeviceInfo,
 )
-from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_ADRES, CONF_BAGID, DOMAIN
@@ -26,16 +22,12 @@ class RWMEntity(CoordinatorEntity[RWMCoordinator]):
         coordinator: RWMCoordinator,
         sleutel: str,
     ) -> None:
-        super().__init__(
-            coordinator
-        )
+        super().__init__(coordinator)
 
         entry = coordinator.config_entry
         bagid = entry.data[CONF_BAGID]
 
-        self._attr_unique_id = (
-            f"{bagid}_{sleutel}"
-        )
+        self._attr_unique_id = f"{bagid}_{sleutel}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={
@@ -54,26 +46,16 @@ class RWMEntity(CoordinatorEntity[RWMCoordinator]):
             configuration_url="https://rwm.nl/wanneer",
         )
 
-    async def async_added_to_hass(self) -> None:
-        """Registreer de dagelijkse statusupdate."""
+    # Basis voor de entity-ID bij het eerste aanmaken. Namen komen uit de
+    # vertalingen, maar Home Assistant baseert nieuwe entity-ID's op de Engelse
+    # naam; zo blijven de ID's Nederlands, zoals in eerdere versies.
+    _object_id_naam: str | None = None
 
-        await super().async_added_to_hass()
+    @property
+    def suggested_object_id(self) -> str | None:
+        """Geef de Nederlandstalige basis voor de entity-ID."""
 
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass,
-                self._middernacht,
-                hour=0,
-                minute=0,
-                second=5,
-            )
-        )
+        if self._object_id_naam is not None:
+            return self._object_id_naam
 
-    @callback
-    def _middernacht(
-        self,
-        _now: datetime,
-    ) -> None:
-        """Werk datumafhankelijke waarden na middernacht bij."""
-
-        self.async_write_ha_state()
+        return super().suggested_object_id

@@ -24,7 +24,7 @@ async def async_setup_entry(
 class RWMKalender(RWMEntity, CalendarEntity):
     """Alle ophaaldagen als hele-dag-afspraken."""
 
-    _attr_name = None  # gebruikt de apparaatnaam: calendar.wegafvalkalender
+    _attr_name = None  # gebruikt de apparaatnaam: calendar.wegafval_rwm_kalender
 
     def __init__(self, coordinator: RWMCoordinator) -> None:
         super().__init__(coordinator, "kalender")

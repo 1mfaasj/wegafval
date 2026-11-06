@@ -100,6 +100,19 @@ def _jaar(waarde: str | None) -> int | None:
     return jaar + 2000 if jaar < 100 else jaar
 
 
+def _vervangend_jaar(jaar: int, van_maand: int, naar_maand: int) -> int:
+    """Bepaal het jaar van een vervangende datum zonder jaartal.
+
+    Een verschuiving van december naar januari (of andersom) valt in het
+    volgende (of vorige) jaar, bijvoorbeeld "28/12 wordt vervangen door 04/01".
+    """
+    if van_maand - naar_maand > 6:
+        return jaar + 1
+    if naar_maand - van_maand > 6:
+        return jaar - 1
+    return jaar
+
+
 def _parse_regel(tekst: str) -> tuple[int, int, int] | None:
     """Geeft (weekdag, rangorde, dagverschuiving); rangorde -1 = laatste."""
     t = tekst.lower()
@@ -140,9 +153,10 @@ class PapierSchema:
         for (vj, vm, vd), (nj, nm, nd) in self.uitzonderingen:
             # Zonder jaartal geldt een uitzondering alleen voor het lopende jaar
             van_jaar = vj or huidig_jaar
+            naar_jaar = nj or _vervangend_jaar(van_jaar, vm, nm)
             try:
                 if datum == date(van_jaar, vm, vd):
-                    return date(nj or van_jaar, nm, nd)
+                    return date(naar_jaar, nm, nd)
             except ValueError:
                 continue
         return datum
@@ -172,8 +186,7 @@ def parse_papier_schemas(content: str) -> dict[str, PapierSchema]:
             continue
 
         items = [
-            _schoon(li)
-            for li in re.findall(r"<li\b[^>]*>(.*?)</li>", m.group(2), re.S | re.I)
+            _schoon(li) for li in re.findall(r"<li\b[^>]*>(.*?)</li>", m.group(2), re.S | re.I)
         ]
         items = [i for i in items if i]
         regel, omschrijving = None, ""
@@ -217,8 +230,7 @@ def kernen_uit_stromen(stromen: dict[str, dict[str, Any]]) -> dict[str, PapierSc
             (
                 s
                 for s in stromen.values()
-                if "oud papier" in s["title"].lower()
-                and "echt-susteren" in s["title"].lower()
+                if "oud papier" in s["title"].lower() and "echt-susteren" in s["title"].lower()
             ),
             None,
         )

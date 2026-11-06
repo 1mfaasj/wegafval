@@ -9,10 +9,7 @@ DOMAIN: Final = "wegafval"
 
 BASE_URL: Final = "https://rwm.nl"
 
-USER_AGENT: Final = (
-    "HomeAssistant-Wegafval "
-    "(https://github.com/1mfaasj/wegafval)"
-)
+USER_AGENT: Final = "HomeAssistant-Wegafval (https://github.com/1mfaasj/wegafval)"
 
 CONF_POSTCODE: Final = "postcode"
 CONF_HUISNUMMER: Final = "huisnummer"

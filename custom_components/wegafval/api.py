@@ -115,18 +115,12 @@ class RWMClient:
                         await response.read()
 
             except TimeoutError as err:
-                raise RWMTimeoutError(
-                    "Time-out bij het starten van de RWM-sessie"
-                ) from err
+                raise RWMTimeoutError("Time-out bij het starten van de RWM-sessie") from err
 
             except aiohttp.ClientError as err:
-                raise RWMConnectionError(
-                    f"RWM-sessie kon niet worden gestart: {err}"
-                ) from err
+                raise RWMConnectionError(f"RWM-sessie kon niet worden gestart: {err}") from err
 
-            cookie = self._session.cookie_jar.filter_cookies(
-                URL(BASE_URL)
-            ).get("XSRF-TOKEN")
+            cookie = self._session.cookie_jar.filter_cookies(URL(BASE_URL)).get("XSRF-TOKEN")
 
             self._xsrf = unquote(cookie.value) if cookie else None
 
@@ -143,7 +137,7 @@ class RWMClient:
             except ValueError:
                 pass
 
-        base_delay = 2 ** attempt
+        base_delay = 2**attempt
         jitter = random.uniform(0.25, 1.0)
 
         return min(base_delay + jitter, 30.0)
@@ -157,13 +151,9 @@ class RWMClient:
 
         content_length = response.content_length
 
-        if (
-            content_length is not None
-            and content_length > MAX_RESPONSE_SIZE
-        ):
+        if content_length is not None and content_length > MAX_RESPONSE_SIZE:
             raise RWMResponseError(
-                f"Response voor {path} is onverwacht groot: "
-                f"{content_length} bytes"
+                f"Response voor {path} is onverwacht groot: {content_length} bytes"
             )
 
         try:
@@ -174,15 +164,10 @@ class RWMClient:
             ) from err
 
         if len(raw) > MAX_RESPONSE_SIZE:
-            raise RWMResponseError(
-                f"Response voor {path} is onverwacht groot: "
-                f"{len(raw)} bytes"
-            )
+            raise RWMResponseError(f"Response voor {path} is onverwacht groot: {len(raw)} bytes")
 
         if not raw.strip():
-            raise RWMResponseError(
-                f"RWM gaf een lege response voor {path}"
-            )
+            raise RWMResponseError(f"RWM gaf een lege response voor {path}")
 
         try:
             return await response.json(
@@ -200,8 +185,7 @@ class RWMClient:
             )
 
             raise RWMResponseError(
-                f"RWM gaf geen geldige JSON voor {path}; "
-                f"Content-Type: {content_type}"
+                f"RWM gaf geen geldige JSON voor {path}; Content-Type: {content_type}"
             ) from err
 
     async def _get(
@@ -231,8 +215,7 @@ class RWMClient:
                                 session_refreshed = True
 
                                 _LOGGER.debug(
-                                    "RWM gaf HTTP %s voor %s; "
-                                    "nieuwe sessie starten",
+                                    "RWM gaf HTTP %s voor %s; nieuwe sessie starten",
                                     response.status,
                                     path,
                                 )
@@ -266,8 +249,7 @@ class RWMClient:
                             )
 
                             _LOGGER.warning(
-                                "RWM gaf HTTP %s voor %s; "
-                                "nieuwe poging over %.1f seconden",
+                                "RWM gaf HTTP %s voor %s; nieuwe poging over %.1f seconden",
                                 response.status,
                                 path,
                                 delay,
@@ -288,9 +270,7 @@ class RWMClient:
                         )
 
             except TimeoutError as err:
-                last_error = RWMTimeoutError(
-                    f"Time-out bij ophalen van {path}"
-                )
+                last_error = RWMTimeoutError(f"Time-out bij ophalen van {path}")
 
                 if attempt + 1 >= MAX_ATTEMPTS:
                     raise last_error from err
@@ -298,8 +278,7 @@ class RWMClient:
                 delay = self._retry_delay(attempt, None)
 
                 _LOGGER.warning(
-                    "Time-out bij ophalen van %s; "
-                    "nieuwe poging over %.1f seconden",
+                    "Time-out bij ophalen van %s; nieuwe poging over %.1f seconden",
                     path,
                     delay,
                 )
@@ -307,9 +286,7 @@ class RWMClient:
                 await asyncio.sleep(delay)
 
             except aiohttp.ClientError as err:
-                last_error = RWMConnectionError(
-                    f"Netwerkfout bij ophalen van {path}: {err}"
-                )
+                last_error = RWMConnectionError(f"Netwerkfout bij ophalen van {path}: {err}")
 
                 if attempt + 1 >= MAX_ATTEMPTS:
                     raise last_error from err
@@ -317,8 +294,7 @@ class RWMClient:
                 delay = self._retry_delay(attempt, None)
 
                 _LOGGER.warning(
-                    "Netwerkfout bij ophalen van %s; "
-                    "nieuwe poging over %.1f seconden",
+                    "Netwerkfout bij ophalen van %s; nieuwe poging over %.1f seconden",
                     path,
                     delay,
                 )
@@ -328,13 +304,11 @@ class RWMClient:
         if last_error is not None:
             raise last_error
 
-        raise RWMConnectionError(
-            f"Ophalen van {path} is mislukt"
-        )
+        raise RWMConnectionError(f"Ophalen van {path} is mislukt")
 
     async def zoek_adres(
         self,
-        postcode: tr,
+        postcode: str,
         huisnummer: int,
     ) -> list[dict[str, Any]]:
         """Zoek adressen op postcode en huisnummer."""
@@ -350,16 +324,9 @@ class RWMClient:
             return []
 
         if not isinstance(data, list):
-            raise RWMResponseError(
-                "RWM gaf een onverwachte adresresponse terug"
-            )
+            raise RWMResponseError("RWM gaf een onverwachte adresresponse terug")
 
-        return [
-            address
-            for address in data
-            if isinstance(address, dict)
-            and address.get("bagid")
-        ]
+        return [address for address in data if isinstance(address, dict) and address.get("bagid")]
 
     async def afvalstromen(
         self,
@@ -367,20 +334,12 @@ class RWMClient:
     ) -> list[dict[str, Any]]:
         """Haal de afvalstromen voor een BAG-ID op."""
 
-        data = await self._get(
-            f"/rest/adressen/{bagid}/afvalstromen"
-        )
+        data = await self._get(f"/rest/adressen/{bagid}/afvalstromen")
 
         if not isinstance(data, list):
-            raise RWMResponseError(
-                "RWM gaf een onverwachte afvalstromenresponse terug"
-            )
+            raise RWMResponseError("RWM gaf een onverwachte afvalstromenresponse terug")
 
-        return [
-            item
-            for item in data
-            if isinstance(item, dict)
-        ]
+        return [item for item in data if isinstance(item, dict)]
 
     async def kalender(
         self,
@@ -398,13 +357,6 @@ class RWMClient:
             return None
 
         if not isinstance(data, list):
-            raise RWMResponseError(
-                f"RWM gaf een onverwachte kalenderresponse "
-                f"voor {jaar} terug"
-            )
+            raise RWMResponseError(f"RWM gaf een onverwachte kalenderresponse voor {jaar} terug")
 
-        return [
-            item
-            for item in data
-            if isinstance(item, dict)
-        ]
+        return [item for item in data if isinstance(item, dict)]

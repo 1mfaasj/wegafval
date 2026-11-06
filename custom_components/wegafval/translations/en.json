@@ -23,6 +23,15 @@
         "data": {
           "papier_kern": "Village"
         }
+      },
+      "reconfigure": {
+        "title": "Change address",
+        "description": "Enter the new address. Entities, names and automations are kept; the stored data for the old address is removed.",
+        "data": {
+          "postcode": "Postcode",
+          "huisnummer": "House number",
+          "toevoeging": "Suffix (optional)"
+        }
       }
     },
     "error": {
@@ -31,7 +40,8 @@
       "invalid_postcode": "Invalid postcode (use e.g. 1234AB)."
     },
     "abort": {
-      "already_configured": "This address is already configured."
+      "already_configured": "This address is already configured.",
+      "reconfigure_successful": "The address has been changed."
     }
   },
   "options": {
@@ -55,9 +65,36 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "afval_buiten_zetten": {
+        "name": "Put out waste"
+      }
+    },
     "button": {
       "nu_bijwerken": {
         "name": "Update now"
+      }
+    },
+    "sensor": {
+      "volgende_ophaling": {
+        "name": "Next collection"
+      },
+      "ophaling_vandaag": {
+        "name": "Collection today"
+      },
+      "ophaling_morgen": {
+        "name": "Collection tomorrow"
+      },
+      "dagen_tot_ophaling": {
+        "name": "{afvalsoort} days until collection"
+      },
+      "bronstatus": {
+        "name": "Source status",
+        "state": {
+          "actueel": "Up to date",
+          "cache": "Cached",
+          "verouderd": "Outdated"
+        }
       }
     }
   }
